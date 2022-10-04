@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from datetime import date
 from datetime import datetime
+from datetime import timedelta
 import os
 import glob
 import shutil
@@ -80,7 +81,6 @@ def thread_func(*args):
     for report_type in report_list:
 #         n_units = int(direct.counter[-1]['units'].split('/')[1])
 #         if n_units >= 50:
-#         report_name = report_type.lower().replace('_', ' ') + ' ' + str(datetime.now().time().strftime('%H%M%S'))
         report_name = report_type.lower() + '-' + str(datetime.now().time().strftime('%H%M%S'))
 #         print(report_name)
         report = direct.get_stat_report(report_name=report_name,
@@ -132,27 +132,33 @@ if connection is not None:
     add_logging(data='Количество записей в таблице статистики ' + str(db_data.shape[0]))
 
     # извлекаем последнюю дату
-    last_date = db_data['date'].sort_values(ascending=False).values[0]
-    add_logging(data='Дата последней записи в таблице статистики ' + str(last_date))
-    print(last_date)
+    if db_data.shape[0] > 0:
+        last_date = db_data['date'].sort_values(ascending=False).values[0]
+        add_logging(data='Дата последней записи в таблице статистики ' + str(last_date))
+        print('Дата последней записи в таблице статистики ', last_date)
+    else:
+        last_date = date.today() - timedelta(days=3)
 
     # загружаем таблицу с аккаунтами
     # api_keys = database.get_data_by_response(sql_resp=db_config['keys_response_1']['resp'])
+
     # тестовая таблица с аккаунтами
     accounts = ConfigParser()
     accounts.read("accounts.ini")
     logins = [accounts['account_1']['login'], accounts['account_2']['login'], accounts['account_3']['login']]
     tokens = [accounts['account_1']['token'], accounts['account_2']['token'], accounts['account_3']['token']]
-
     api_keys = pd.DataFrame({'login': logins, 'token': tokens})
     add_logging(data='Количество записей в таблице аккаунтов ' + str(api_keys.shape[0]))
 
     # загружаем типы отчетов
-    reports = database.get_data_by_response(sql_resp=db_config['report_types_1']['resp'])
-    report_list = reports['id_report'].tolist()
+    # reports = database.get_data_by_response(sql_resp=db_config['report_types_1']['resp'])
+    # report_list = reports['id_report'].tolist()
+    # report_list = ['AD_PERFORMANCE_REPORT']
+    report_list = ['SEARCH_QUERY_PERFORMANCE_REPORT']
 
     # задаем временной интервал
     date_from = str(last_date)
+    # date_from = '2022-09-01'
     date_to = str(date.today())
 
     # создаем отдельные потоки по каждому аккаунту
@@ -180,30 +186,32 @@ files = []
 for folder in os.listdir(path_):
     files += (glob.glob(os.path.join(path_ + '/' + folder, "*.tsv")))
 
-
 if len(files) > 0:
     # создаем датасет на основе загруженных по API данных
     dataset = database.make_dataset(path=path_)
     add_logging(data='Количество сырых строк ' + str(dataset.shape[0]))
 
-    # фильтрация дубликатов
-    db_data_from = db_data[db_data['date'] > datetime.strptime(date_from, '%Y-%m-%d').date()]
+    if db_data.shape[0] > 0:
+        # фильтрация дубликатов
+        db_data_from = db_data[db_data['date'] > datetime.strptime(date_from, '%Y-%m-%d').date()]
 
-    # колонки по которым происходит поиск совпадений
-    cols = dataset.columns.tolist()
+        # колонки по которым происходит поиск совпадений
+        cols = dataset.columns.tolist()
 
-    print(dataset.shape)
-    dataset = dataset.drop_duplicates(subset=cols, keep='first')
-    print(dataset.shape)
+        print(dataset.shape)
+        dataset = dataset.drop_duplicates(subset=cols, keep='first')
+        print(dataset.shape)
 
-    # объединяем датасеты с удалением дубликатов
-    into_db = pd.concat([db_data_from, dataset], axis=0).reset_index().drop(['index', 'id'], axis=1).drop_duplicates(
-        subset=cols,
-        keep=False)
-
-    print('dataset', dataset.shape)
-    print('db_data_from', db_data_from.shape)
-    print('into_db', into_db.shape)
+        # объединяем датасеты с удалением дубликатов
+        into_db = pd.concat([db_data_from, dataset], axis=0).reset_index().drop(['index', 'id'], axis=1).drop_duplicates(
+            subset=cols,
+            keep=False)
+        print('dataset', dataset.shape)
+        print('db_data_from', db_data_from.shape)
+        print('into_db', into_db.shape)
+    else:
+        into_db = dataset
+        print('into_db', into_db.shape)
 
     into_db.to_csv(path_ + 'into_db.csv', sep=';', index=False)
     add_logging(data='Готово строк для записи в БД: ' + str(into_db.shape[0]))
@@ -222,7 +230,7 @@ else:
     add_logging(data='Нет загруженных файлов для обработки')
 
 if delete_files == 1:
-    # удаляем файлы
+    # удаляем файлы (папку)
     try:
         shutil.rmtree(path_)
         add_logging(data='Файлы удалены')

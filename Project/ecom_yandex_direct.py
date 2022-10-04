@@ -357,17 +357,7 @@ class YandexDirectEcomru:
                                 n_profitability=None,
                                 n_crr=None,
                                 n_cpa=None,
-                                settings=[{"Option": "ADD_METRICA_TAG", "Value": "YES"},
-                                          {"Option": "ADD_OPENSTAT_TAG", "Value": "NO"},
-                                          {"Option": "ADD_TO_FAVORITES", "Value": "NO"},
-                                          {"Option": "ENABLE_AREA_OF_INTEREST_TARGETING", "Value": "YES"},
-                                          {"Option": "ENABLE_COMPANY_INFO", "Value": "YES"},
-                                          {"Option": "ENABLE_SITE_MONITORING", "Value": "NO"},
-                                          {"Option": "EXCLUDE_PAUSED_COMPETING_ADS", "Value": "NO"},
-                                          {"Option": "MAINTAIN_NETWORK_CPC", "Value": "NO"},
-                                          {"Option": "REQUIRE_SERVICING", "Value": "NO"},
-                                          {"Option": "CAMPAIGN_EXACT_PHRASE_MATCHING_ENABLED", "Value": "NO"}
-                                          ],
+                                settings=None,
                                 counter_ids=None,
                                 #                                 rel_kw_budget_perc=None,
                                 #                                 rel_kw_opt_goal_id=0,
@@ -378,6 +368,18 @@ class YandexDirectEcomru:
         """
         Возвращает словарь с параметрами текстовой кампании
         """
+        if settings is None:
+            settings = [{"Option": "ADD_METRICA_TAG", "Value": "YES"},
+                        {"Option": "ADD_OPENSTAT_TAG", "Value": "NO"},
+                        {"Option": "ADD_TO_FAVORITES", "Value": "NO"},
+                        {"Option": "ENABLE_AREA_OF_INTEREST_TARGETING", "Value": "YES"},
+                        {"Option": "ENABLE_COMPANY_INFO", "Value": "YES"},
+                        {"Option": "ENABLE_SITE_MONITORING", "Value": "NO"},
+                        {"Option": "EXCLUDE_PAUSED_COMPETING_ADS", "Value": "NO"},
+                        {"Option": "MAINTAIN_NETWORK_CPC", "Value": "NO"},
+                        {"Option": "REQUIRE_SERVICING", "Value": "NO"},
+                        {"Option": "CAMPAIGN_EXACT_PHRASE_MATCHING_ENABLED", "Value": "NO"}
+                        ]
         result = {"TextCampaign": {"BiddingStrategy": {"Search": {},
                                                        "Network": {}}
                                    }}
@@ -1330,6 +1332,7 @@ class YandexDirectEcomru:
                            'Impressions', 'IncomeGrade',
                            'MatchedKeyword', 'MatchType',
                            'Placement', 'Profit',
+                           'Query',
                            'Revenue',
                            'TargetingCategory',
                            'WeightedCtr', 'WeightedImpressions']
