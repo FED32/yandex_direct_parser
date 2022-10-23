@@ -14,13 +14,16 @@ from ecom_db_files import DbEcomru
 
 
 # читаем файл с путями
-paths = ConfigParser()
-paths.read("paths.ini")
-
-data_folder = paths["data"]["data"]
-logs_folder = paths["logs"]["logs"]
-delete_files = int(paths["delete_files"]["delete_files"])
-upl_into_db = int(paths["upl_into_db"]["upl_into_db"])
+# paths = ConfigParser()
+# paths.read("paths.ini")
+# data_folder = paths["data"]["data"]
+# logs_folder = paths["logs"]["logs"]
+# delete_files = int(paths["delete_files"]["delete_files"])
+# upl_into_db = int(paths["upl_into_db"]["upl_into_db"])
+data_folder = './data'
+logs_folder = './logs'
+delete_files = 1
+upl_into_db = 1
 
 print('data_folder: ', data_folder)
 print('logs_folder: ', logs_folder)
@@ -30,14 +33,21 @@ print('upl_into_db: ', upl_into_db)
 # читаем файл с параметрами подключения
 db_config = ConfigParser()
 db_config.read("db_params.ini")
+# host = db_config["params_1"]["host"]
+# port = db_config["params_1"]["port"]
+# ssl_mode = db_config["params_1"]["ssl_mode"]
+# db_name = db_config["params_1"]["db_name"]
+# user = db_config["params_1"]["user"]
+# password = db_config["params_1"]["password"]
+# target_session_attrs = db_config["params_1"]["target_session_attrs"]
+host = os.environ.get('ECOMRU_PG_HOST', None)
+port = os.environ.get('ECOMRU_PG_PORT', None)
+ssl_mode = os.environ.get('ECOMRU_PG_SSL_MODE', None)
+db_name = os.environ.get('ECOMRU_PG_DB_NAME', None)
+user = os.environ.get('ECOMRU_PG_USER', None)
+password = os.environ.get('ECOMRU_PG_PASSWORD', None)
+target_session_attrs = 'read-write'
 
-host = db_config["params_1"]["host"]
-port = db_config["params_1"]["port"]
-ssl_mode = db_config["params_1"]["ssl_mode"]
-db_name = db_config["params_1"]["db_name"]
-user = db_config["params_1"]["user"]
-password = db_config["params_1"]["password"]
-target_session_attrs = db_config["params_1"]["target_session_attrs"]
 
 # создаем рабочую папку, если еще не создана
 if not os.path.isdir(data_folder):
@@ -51,12 +61,14 @@ path_ = f'{data_folder}/{str(date.today())}/'
 if not os.path.isdir(path_):
     os.mkdir(path_)
 
+
 # функция для записи пользовательского лога
 def add_logging(data: str):
     log_file_name = 'log_' + str(date.today())
     with open(f'{logs_folder}/{log_file_name}.txt', 'a') as f:
         f.write(str(datetime.now()) + ': ')
         f.write(str(data + '\n'))
+
 
 # создаем экземпляр класса, проверяем соединение с базой
 database = DbEcomru(host=host,
@@ -69,6 +81,7 @@ database = DbEcomru(host=host,
 
 connection = database.test_db_connection()
 
+
 # функция для получения отчетов
 def thread_func(*args):
     login = args[0]
@@ -77,7 +90,7 @@ def thread_func(*args):
     date_from = args[3]
     date_to = args[4]
     direct = YandexDirectEcomru(login=login, token=token, use_operator_units='false')
-    direct.get_campaigns()
+    # direct.get_campaigns()
     for report_type in report_list:
 #         n_units = int(direct.counter[-1]['units'].split('/')[1])
 #         if n_units >= 50:
@@ -119,7 +132,7 @@ def thread_func(*args):
 #         else:
 #             add_logging(data=f'{login}: не достаточно баллов')
 #             break
-    direct.get_campaigns()
+#     direct.get_campaigns()
     pd.DataFrame(direct.counter).to_csv(logs_folder+'/'+f"log_{str(date.today())}_{str(datetime.now().time().strftime('%H%M%S'))}_{login}.csv",
                                         index=False,
                                         sep=';')
@@ -143,10 +156,12 @@ if connection is not None:
     # api_keys = database.get_data_by_response(sql_resp=db_config['keys_response_1']['resp'])
 
     # тестовая таблица с аккаунтами
-    accounts = ConfigParser()
-    accounts.read("accounts.ini")
-    logins = [accounts['account_1']['login'], accounts['account_2']['login'], accounts['account_3']['login']]
-    tokens = [accounts['account_1']['token'], accounts['account_2']['token'], accounts['account_3']['token']]
+    # accounts = ConfigParser()
+    # accounts.read("accounts.ini")
+    # logins = [accounts['account_1']['login'], accounts['account_2']['login'], accounts['account_3']['login']]
+    # tokens = [accounts['account_1']['token'], accounts['account_2']['token'], accounts['account_3']['token']]
+    logins = os.environ.get('YA_TEST_USERS', None).split(', ')
+    tokens = os.environ.get('YA_TEST_TOKENS', None).split(', ')
     api_keys = pd.DataFrame({'login': logins, 'token': tokens})
     add_logging(data='Количество записей в таблице аккаунтов ' + str(api_keys.shape[0]))
 
