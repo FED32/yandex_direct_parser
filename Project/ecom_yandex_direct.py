@@ -11,9 +11,13 @@ from time import sleep
 
 
 class YandexDirectEcomru:
-    def __init__(self, login, token, sandbox=False, use_operator_units='false'):
+    def __init__(self, login=None, token=None, sandbox=False, use_operator_units='false'):
         self.login = login
         self.token = token
+        self.client_id = None
+        self.client_secret = None
+        self.redirect_url = None
+
         urls = ['https://api.direct.yandex.ru/v4/json/',
                 'https://api.direct.yandex.ru/live/v4/json/',
                 'https://api.direct.yandex.com/json/v5/']
@@ -22,7 +26,7 @@ class YandexDirectEcomru:
                         'https://api-sandbox.direct.yandex.ru/live/v4/json/',
                         'https://api-sandbox.direct.yandex.com/json/v5/']
 
-        self.head = {"Authorization": 'Bearer' + ' ' + self.token,
+        self.head = {"Authorization": f'Bearer {self.token}',
                      "Accept-Language": "ru",
                      "Client-Login": self.login,
                      "Content-Type": "application/json; charset=utf-8",
@@ -35,6 +39,43 @@ class YandexDirectEcomru:
             self.urls = urls
 
         self.counter = []  # счетчик запросов
+
+    def get_auth_link(self, type_):
+        """
+        Генерирует ссылку на страницу авторизации клиентом приложения
+        """
+        if type_ == 'token':
+            return f'https://oauth.yandex.ru/authorize?response_type=token&client_id={self.client_id}'
+        elif type_ == 'code':
+            return f'https://oauth.yandex.ru/authorize?response_type=code&client_id={self.client_id}'
+        else:
+            print('Incorrect data')
+            return None
+
+    def get_token(self, code):
+        """
+        Получает токен по коду
+        """
+        url = 'https://oauth.yandex.ru/token'
+        # url = f'https://oauth.yandex.ru/token?grant_type=authorization_code&code={code}&client_id={self.client_id}&client_secret={self.client_secret}'
+
+        # head = {"Content-Type": "application/json; charset=utf-8"}
+        head = {"Content-Type": "application/x-www-form-urlencoded"}
+
+        # params = {'grant_type': 'authorization_code'}
+        body = {
+            "grant_type": "authorization_code",
+            "code": code,
+            "client_id": self.client_id,
+            "client_secret": self.client_secret
+                }
+        response = requests.post(url, headers=head, data=json.dumps(body))
+        # response = requests.post(url, headers=head, data=json.dumps(body, ensure_ascii=False).encode('utf8'))
+        # response = requests.post(url, headers=head)
+        # response = requests.post(url, params=body)
+        print(response.status_code)
+        # print(url)
+        return response
 
     @staticmethod
     def u(x):

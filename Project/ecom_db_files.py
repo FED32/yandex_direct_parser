@@ -24,19 +24,20 @@ class DbEcomru:
         self.password = password
         self.target_session_attrs = target_session_attrs
 
+        self.db_access = f"host={self.host} " \
+                         f"port={self.port} " \
+                         f"sslmode={self.ssl_mode} " \
+                         f"dbname={self.db_name} " \
+                         f"user={self.user} " \
+                         f"password={self.password} " \
+                         f"target_session_attrs={self.target_session_attrs}"
+
     def test_db_connection(self):
         """
         Проверка доступа к БД
         """
-        db_access = f"host={self.host} " \
-                    f"port={self.port} " \
-                    f"sslmode={self.ssl_mode} " \
-                    f"dbname={self.db_name} " \
-                    f"user={self.user} " \
-                    f"password={self.password} " \
-                    f"target_session_attrs={self.target_session_attrs}"
         try:
-            conn = psycopg2.connect(db_access)
+            conn = psycopg2.connect(self.db_access)
             q = conn.cursor()
             q.execute('SELECT version()')
             connection = q.fetchone()
@@ -84,24 +85,26 @@ class DbEcomru:
         db_params = f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.db_name}"
         engine = create_engine(db_params)
         try:
+            print('Загружается таблица')
             data = pd.read_sql(sql_resp, con=engine)
-            print(f'Загружена таблица по SQL-запросу')
+            print('Загружена таблица по SQL-запросу')
             return data
         except:
             print('Произошла непредвиденная ошибка')
             return None
 
-    def save_file(self, path, name, content):
+    @staticmethod
+    def save_file(path, name, content):
         """
         Сохраняет файл
         """
         if not os.path.isdir(path):
             os.mkdir(path)
-        dir = path + '/' + name
-        file = open(dir, 'wb')
+        dir_ = path + '/' + name
+        file = open(dir_, 'wb')
         file.write(content)
         file.close()
-        print('Сохранен', dir)
+        print('Сохранен', dir_)
 
     @staticmethod
     def read_trans_tsv(file):
@@ -195,3 +198,65 @@ class DbEcomru:
             else:
                 dataset[col] = dataset[col].astype(dtypes[col])
         return dataset
+
+    def add_new_access_data(self,
+                            client_id: int,
+                            name: str,
+                            login: str,
+                            token: str,
+                            ya_direct_mp_id: int,
+                            ya_direct_login_attribute_id: int,
+                            ya_direct_token_attribute_id: int,
+                            status='Active'):
+        """
+        Добавляет в базу новые данные для доступа к yandex direct для пользователя
+        """
+        add_to_acc_list_query = f"INSERT INTO account_list (mp_id, client_id, status_1, name) " \
+                                f"VALUES ({ya_direct_mp_id}, {client_id}, '{status}', '{name}')"
+
+        id_query = f"SELECT id FROM account_list " \
+                   f"WHERE client_id = {client_id} AND mp_id = {ya_direct_mp_id} AND name = '{name}'"
+
+        try:
+            conn = psycopg2.connect(self.db_access)
+            q = conn.cursor()
+            q.execute(add_to_acc_list_query)
+            conn.commit()
+            status = q.statusmessage
+            q.close()
+            conn.close()
+        except:
+            print('Нет подключения к БД, или нет доступа на выполнение операции')
+            return None
+
+        if status is not None:
+            try:
+                conn = psycopg2.connect(self.db_access)
+                q = conn.cursor()
+                q.execute(id_query)
+                result = q.fetchall()
+                print(result)
+                conn.close()
+            except:
+                print('Нет подключения к БД, или нет доступа на выполнение операции')
+                return None
+
+            if result is not None:
+                id_ = result[0][0]
+
+                add_to_acc_service_data_query = f"INSERT INTO account_service_data (account_id, attribute_id, " \
+                                                f"attribute_value) " \
+                                                f"VALUES ({id_}, {ya_direct_login_attribute_id}, '{login}'), " \
+                                                f"({id_}, {ya_direct_token_attribute_id}, '{token}')"
+                try:
+                    conn = psycopg2.connect(self.db_access)
+                    q = conn.cursor()
+                    q.execute(add_to_acc_service_data_query)
+                    conn.commit()
+                    # status = q.statusmessage
+                    q.close()
+                    conn.close()
+                    return 'OK'
+                except:
+                    print('Нет подключения к БД, или нет доступа на выполнение операции')
+                    return None

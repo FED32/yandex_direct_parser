@@ -6,11 +6,12 @@ from datetime import timedelta
 import os
 import glob
 import shutil
-import sys
+# import sys
 from threading import Thread
-from configparser import ConfigParser
+# from configparser import ConfigParser
 from ecom_yandex_direct import YandexDirectEcomru
 from ecom_db_files import DbEcomru
+from data_logging import add_logging
 
 
 # читаем файл с путями
@@ -31,8 +32,8 @@ print('delete_files: ', delete_files)
 print('upl_into_db: ', upl_into_db)
 
 # читаем файл с параметрами подключения
-db_config = ConfigParser()
-db_config.read("db_params.ini")
+# db_config = ConfigParser()
+# db_config.read("db_params.ini")
 # host = db_config["params_1"]["host"]
 # port = db_config["params_1"]["port"]
 # ssl_mode = db_config["params_1"]["ssl_mode"]
@@ -62,12 +63,12 @@ if not os.path.isdir(path_):
     os.mkdir(path_)
 
 
-# функция для записи пользовательского лога
-def add_logging(data: str):
-    log_file_name = 'log_' + str(date.today())
-    with open(f'{logs_folder}/{log_file_name}.txt', 'a') as f:
-        f.write(str(datetime.now()) + ': ')
-        f.write(str(data + '\n'))
+# # функция для записи пользовательского лога
+# def add_logging(data: str):
+#     log_file_name = 'log_' + str(date.today())
+#     with open(f'{logs_folder}/{log_file_name}.txt', 'a') as f:
+#         f.write(str(datetime.now()) + ': ')
+#         f.write(str(data + '\n'))
 
 
 # создаем экземпляр класса, проверяем соединение с базой
@@ -92,8 +93,8 @@ def thread_func(*args):
     direct = YandexDirectEcomru(login=login, token=token, use_operator_units='false')
     # direct.get_campaigns()
     for report_type in report_list:
-#         n_units = int(direct.counter[-1]['units'].split('/')[1])
-#         if n_units >= 50:
+        # n_units = int(direct.counter[-1]['units'].split('/')[1])
+        # if n_units >= 50:
         report_name = report_type.lower() + '-' + str(datetime.now().time().strftime('%H%M%S'))
 #         print(report_name)
         report = direct.get_stat_report(report_name=report_name,
@@ -114,40 +115,42 @@ def thread_func(*args):
 #         print(report.headers)
         if report is not None:
             if report.status_code == 200:
-                add_logging(data=f"{login}_{report_type}: отчет создан успешно")
+                add_logging(logs_folder, data=f"{login}_{report_type}: отчет создан успешно")
                 database.save_file(path=path_+f'{login}',
                                    name=f"{login}_{report_type.lower()}_{str(datetime.now().time().strftime('%H%M%S'))}.tsv",
                                    content=report.content)
-                add_logging(data=f"{login}_{report_type}: файл отчета сохранен")
+                add_logging(logs_folder, data=f"{login}_{report_type}: файл отчета сохранен")
             elif report.status_code == 400:
-                add_logging(data=f"{login}_{report_type}: Параметры запроса указаны неверно или достигнут лимит "
+                add_logging(logs_folder, data=f"{login}_{report_type}: Параметры запроса указаны неверно или достигнут лимит "
                                  f"отчетов в очереди")
             elif report.status_code == 500:
-                add_logging(data=f"{login}_{report_type}: при формировании отчета произошла ошибка")
+                add_logging(logs_folder, data=f"{login}_{report_type}: при формировании отчета произошла ошибка")
             elif report.status_code == 502:
-                add_logging(data=f"{login}_{report_type}: время формирования отчета превысило серверное ограничение")
+                add_logging(logs_folder, data=f"{login}_{report_type}: время формирования отчета превысило серверное ограничение")
         else:
-            add_logging(data=f"{login}_{report_type}: ошибка соединения с сервером API либо непредвиденная ошибка")
+            add_logging(logs_folder, data=f"{login}_{report_type}: ошибка соединения с сервером API либо непредвиденная ошибка")
             continue
 #         else:
 #             add_logging(data=f'{login}: не достаточно баллов')
 #             break
 #     direct.get_campaigns()
-    pd.DataFrame(direct.counter).to_csv(logs_folder+'/'+f"log_{str(date.today())}_{str(datetime.now().time().strftime('%H%M%S'))}_{login}.csv",
-                                        index=False,
-                                        sep=';')
+    pd.DataFrame(direct.counter).to_csv(
+        logs_folder+'/'+f"log_{str(date.today())}_{str(datetime.now().time().strftime('%H%M%S'))}_{login}.csv",
+        index=False,
+        sep=';')
+
 
 if connection is not None:
-    add_logging(data=str(connection))
+    add_logging(logs_folder, data=str(connection))
 
     # загружаем таблицу с данными
     db_data = database.get_table(table_name='ya_ads_data')
-    add_logging(data='Количество записей в таблице статистики ' + str(db_data.shape[0]))
+    add_logging(logs_folder, data='Количество записей в таблице статистики ' + str(db_data.shape[0]))
 
     # извлекаем последнюю дату
     if db_data.shape[0] > 0:
         last_date = db_data['date'].sort_values(ascending=False).values[0]
-        add_logging(data='Дата последней записи в таблице статистики ' + str(last_date))
+        add_logging(logs_folder, data='Дата последней записи в таблице статистики ' + str(last_date))
         print('Дата последней записи в таблице статистики ', last_date)
     else:
         last_date = date.today() - timedelta(days=3)
@@ -163,7 +166,7 @@ if connection is not None:
     logins = os.environ.get('YA_TEST_USERS', None).split(', ')
     tokens = os.environ.get('YA_TEST_TOKENS', None).split(', ')
     api_keys = pd.DataFrame({'login': logins, 'token': tokens})
-    add_logging(data='Количество записей в таблице аккаунтов ' + str(api_keys.shape[0]))
+    add_logging(logs_folder, data='Количество записей в таблице аккаунтов ' + str(api_keys.shape[0]))
 
     # загружаем типы отчетов
     # reports = database.get_data_by_response(sql_resp=db_config['report_types_1']['resp'])
@@ -194,7 +197,7 @@ if connection is not None:
         thread.join()
 
 else:
-    add_logging(data='Нет подключения к БД')
+    add_logging(logs_folder, data='Нет подключения к БД')
 
 # проверяем наличие загруженных файлов
 files = []
@@ -204,7 +207,7 @@ for folder in os.listdir(path_):
 if len(files) > 0:
     # создаем датасет на основе загруженных по API данных
     dataset = database.make_dataset(path=path_)
-    add_logging(data='Количество сырых строк ' + str(dataset.shape[0]))
+    add_logging(logs_folder, data='Количество сырых строк ' + str(dataset.shape[0]))
 
     if db_data.shape[0] > 0:
         # фильтрация дубликатов
@@ -229,28 +232,28 @@ if len(files) > 0:
         print('into_db', into_db.shape)
 
     into_db.to_csv(path_ + 'into_db.csv', sep=';', index=False)
-    add_logging(data='Готово строк для записи в БД: ' + str(into_db.shape[0]))
+    add_logging(logs_folder, data='Готово строк для записи в БД: ' + str(into_db.shape[0]))
     print(into_db)
 
     if upl_into_db == 1:
         upload = database.upl_to_db(dataset=into_db, table_name='ya_ads_data')
         if upload is not None:
-            add_logging(data='Запись в БД выполнена')
+            add_logging(logs_folder, data='Запись в БД выполнена')
         else:
-            add_logging(data='Запись в БД не удалась')
+            add_logging(logs_folder, data='Запись в БД не удалась')
     else:
-        add_logging(data='Запись в БД отключена')
+        add_logging(logs_folder, data='Запись в БД отключена')
 else:
     print('Нет загруженных файлов для обработки')
-    add_logging(data='Нет загруженных файлов для обработки')
+    add_logging(logs_folder, data='Нет загруженных файлов для обработки')
 
 if delete_files == 1:
     # удаляем файлы (папку)
     try:
         shutil.rmtree(path_)
-        add_logging(data='Файлы удалены')
+        add_logging(logs_folder, data='Файлы удалены')
     except OSError as e:
         print("Error: %s - %s." % (e.filename, e.strerror))
-        add_logging(data='Ошибка при удалении файлов')
+        add_logging(logs_folder, data='Ошибка при удалении файлов')
 else:
-    add_logging(data='Удаление файлов отменено')
+    add_logging(logs_folder, data='Удаление файлов отменено')
