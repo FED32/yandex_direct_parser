@@ -3,7 +3,7 @@ version: "3.8"
 services:
   app:
     build: .
-    restrart: always
+    restart: always
     environment:
       TZ: Europe/Moscow
       ECOMRU_PG_DB_NAME: ${ECOMRU_PG_DB_NAME}
