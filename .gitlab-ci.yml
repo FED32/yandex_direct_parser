@@ -2,7 +2,7 @@ workflow:
   rules:
     - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == 'master'
       when: never
-    - if: $CI_COMMIT_BRANCH == "master"
+    - if: $CI_COMMIT_BRANCH == "maste"
       variables:
         TAG_NAME: apps1
       when: always
