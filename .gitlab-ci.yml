@@ -2,7 +2,7 @@ workflow:
   rules:
     - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == 'master'
       when: never
-    - if: $CI_COMMIT_BRANCH == "maste"
+    - if: $CI_COMMIT_BRANCH == "master"
       variables:
         TAG_NAME: apps1
       when: always
@@ -16,5 +16,5 @@ deploy:
     - ${TAG_NAME}
   script:
   - docker compose down
-  #- docker rmi yandex_direct_api_working-app
+  - docker rmi yandex_direct_api_working-app
   - docker compose up -d
