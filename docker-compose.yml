@@ -3,6 +3,7 @@ version: "3.8"
 services:
   app:
     build: .
+    restrart: always
     environment:
       TZ: Europe/Moscow
       ECOMRU_PG_DB_NAME: ${ECOMRU_PG_DB_NAME}
@@ -15,8 +16,8 @@ services:
       YA_TEST_USERS: ${YA_TEST_USERS}
 
     command: sh script.sh
-    #volumes:
-     #   - ./logs:/app/Project/logs
+    volumes:
+      - /home/get/logs_all/yandex_direct_api_working/:/app/logs
     
 
 
