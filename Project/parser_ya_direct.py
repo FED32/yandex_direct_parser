@@ -14,13 +14,6 @@ from ecom_db_files import DbEcomru
 from data_logging import add_logging
 
 
-# читаем файл с путями
-# paths = ConfigParser()
-# paths.read("paths.ini")
-# data_folder = paths["data"]["data"]
-# logs_folder = paths["logs"]["logs"]
-# delete_files = int(paths["delete_files"]["delete_files"])
-# upl_into_db = int(paths["upl_into_db"]["upl_into_db"])
 data_folder = './data'
 logs_folder = './logs'
 delete_files = 1
@@ -31,16 +24,7 @@ print('logs_folder: ', logs_folder)
 print('delete_files: ', delete_files)
 print('upl_into_db: ', upl_into_db)
 
-# читаем файл с параметрами подключения
-# db_config = ConfigParser()
-# db_config.read("db_params.ini")
-# host = db_config["params_1"]["host"]
-# port = db_config["params_1"]["port"]
-# ssl_mode = db_config["params_1"]["ssl_mode"]
-# db_name = db_config["params_1"]["db_name"]
-# user = db_config["params_1"]["user"]
-# password = db_config["params_1"]["password"]
-# target_session_attrs = db_config["params_1"]["target_session_attrs"]
+# читаем параметры подключения
 host = os.environ.get('ECOMRU_PG_HOST', None)
 port = os.environ.get('ECOMRU_PG_PORT', None)
 ssl_mode = os.environ.get('ECOMRU_PG_SSL_MODE', None)
@@ -62,15 +46,6 @@ path_ = f'{data_folder}/{str(date.today())}/'
 if not os.path.isdir(path_):
     os.mkdir(path_)
 
-
-# # функция для записи пользовательского лога
-# def add_logging(data: str):
-#     log_file_name = 'log_' + str(date.today())
-#     with open(f'{logs_folder}/{log_file_name}.txt', 'a') as f:
-#         f.write(str(datetime.now()) + ': ')
-#         f.write(str(data + '\n'))
-
-
 # создаем экземпляр класса, проверяем соединение с базой
 database = DbEcomru(host=host,
                     port=port,
@@ -85,14 +60,14 @@ connection = database.test_db_connection()
 
 # функция для получения отчетов
 def thread_func(*args):
-    login = args[0]
-    token = args[1]
-    report_list = args[2]
-    date_from = args[3]
-    date_to = args[4]
-    direct = YandexDirectEcomru(login=login, token=token, use_operator_units='false')
+    login_ = args[0]
+    token_ = args[1]
+    report_list_ = args[2]
+    date_from_ = args[3]
+    date_to_ = args[4]
+    direct = YandexDirectEcomru(login=login_, token=token_, use_operator_units='false')
     # direct.get_campaigns()
-    for report_type in report_list:
+    for report_type in report_list_:
         # n_units = int(direct.counter[-1]['units'].split('/')[1])
         # if n_units >= 50:
         report_name = report_type.lower() + '-' + str(datetime.now().time().strftime('%H%M%S'))
@@ -104,8 +79,8 @@ def thread_func(*args):
                                         format_='TSV',
                                         limit=None,
                                         offset=None,
-                                        date_from=date_from,
-                                        date_to=date_to,
+                                        date_from=date_from_,
+                                        date_to=date_to_,
                                         processing_mode='auto',
                                         return_money_in_micros='false',
                                         skip_report_header='false',
@@ -115,27 +90,27 @@ def thread_func(*args):
 #         print(report.headers)
         if report is not None:
             if report.status_code == 200:
-                add_logging(logs_folder, data=f"{login}_{report_type}: отчет создан успешно")
-                database.save_file(path=path_+f'{login}',
-                                   name=f"{login}_{report_type.lower()}_{str(datetime.now().time().strftime('%H%M%S'))}.tsv",
+                add_logging(logs_folder, data=f"{login_}_{report_type}: отчет создан успешно")
+                database.save_file(path=path_+f'{login_}',
+                                   name=f"{login_}_{report_type.lower()}_{str(datetime.now().time().strftime('%H%M%S'))}.tsv",
                                    content=report.content)
-                add_logging(logs_folder, data=f"{login}_{report_type}: файл отчета сохранен")
+                add_logging(logs_folder, data=f"{login_}_{report_type}: файл отчета сохранен")
             elif report.status_code == 400:
-                add_logging(logs_folder, data=f"{login}_{report_type}: Параметры запроса указаны неверно или достигнут лимит "
+                add_logging(logs_folder, data=f"{login_}_{report_type}: Параметры запроса указаны неверно или достигнут лимит "
                                  f"отчетов в очереди")
             elif report.status_code == 500:
-                add_logging(logs_folder, data=f"{login}_{report_type}: при формировании отчета произошла ошибка")
+                add_logging(logs_folder, data=f"{login_}_{report_type}: при формировании отчета произошла ошибка")
             elif report.status_code == 502:
-                add_logging(logs_folder, data=f"{login}_{report_type}: время формирования отчета превысило серверное ограничение")
+                add_logging(logs_folder, data=f"{login_}_{report_type}: время формирования отчета превысило серверное ограничение")
         else:
-            add_logging(logs_folder, data=f"{login}_{report_type}: ошибка соединения с сервером API либо непредвиденная ошибка")
+            add_logging(logs_folder, data=f"{login_}_{report_type}: ошибка соединения с сервером API либо непредвиденная ошибка")
             continue
 #         else:
-#             add_logging(data=f'{login}: не достаточно баллов')
+#             add_logging(data=f'{login_}: не достаточно баллов')
 #             break
 #     direct.get_campaigns()
     pd.DataFrame(direct.counter).to_csv(
-        logs_folder+'/'+f"log_{str(date.today())}_{str(datetime.now().time().strftime('%H%M%S'))}_{login}.csv",
+        logs_folder+'/'+f"log_{str(date.today())}_{str(datetime.now().time().strftime('%H%M%S'))}_{login_}.csv",
         index=False,
         sep=';')
 
@@ -144,7 +119,9 @@ if connection is not None:
     add_logging(logs_folder, data=str(connection))
 
     # загружаем таблицу с данными
-    db_data = database.get_table(table_name='ya_ads_data')
+    db_data = database.get_ya_ads_data()
+    # db_data = database.get_table(table_name='ya_ads_data')
+    print('Количество записей в таблице статистики ' + str(db_data.shape[0]))
     add_logging(logs_folder, data='Количество записей в таблице статистики ' + str(db_data.shape[0]))
 
     # извлекаем последнюю дату
@@ -156,16 +133,12 @@ if connection is not None:
         last_date = date.today() - timedelta(days=3)
 
     # загружаем таблицу с аккаунтами
-    # api_keys = database.get_data_by_response(sql_resp=db_config['keys_response_1']['resp'])
+    api_keys = database.get_accounts().drop_duplicates(subset=['key_attribute_value', 'attribute_value'], keep='last')
 
-    # тестовая таблица с аккаунтами
-    # accounts = ConfigParser()
-    # accounts.read("accounts.ini")
-    # logins = [accounts['account_1']['login'], accounts['account_2']['login'], accounts['account_3']['login']]
-    # tokens = [accounts['account_1']['token'], accounts['account_2']['token'], accounts['account_3']['token']]
-    logins = os.environ.get('YA_TEST_USERS', None).split(', ')
-    tokens = os.environ.get('YA_TEST_TOKENS', None).split(', ')
-    api_keys = pd.DataFrame({'login': logins, 'token': tokens})
+    # # тестовая таблица с аккаунтами
+    # logins = os.environ.get('YA_TEST_USERS', None).split(', ')
+    # tokens = os.environ.get('YA_TEST_TOKENS', None).split(', ')
+    # api_keys = pd.DataFrame({'login': logins, 'token': tokens})
     add_logging(logs_folder, data='Количество записей в таблице аккаунтов ' + str(api_keys.shape[0]))
 
     # загружаем типы отчетов
@@ -177,13 +150,15 @@ if connection is not None:
     # задаем временной интервал
     date_from = str(last_date)
     # date_from = '2022-09-01'
-    date_to = str(date.today())
+    date_to = str(date.today() - timedelta(days=1))
 
     # создаем отдельные потоки по каждому аккаунту
     threads = []
     for index, keys in api_keys.iterrows():
-        login = keys[0]
-        token = keys[1]
+        # login = keys[0]
+        # token = keys[1]
+        login = keys[1]
+        token = keys[2]
         threads.append(Thread(target=thread_func, args=(login, token, report_list, date_from, date_to)))
 
     print(threads)
@@ -212,13 +187,14 @@ if len(files) > 0:
     if db_data.shape[0] > 0:
         # фильтрация дубликатов
         db_data_from = db_data[db_data['date'] > datetime.strptime(date_from, '%Y-%m-%d').date()]
+        db_data_from = db_data_from.fillna(np.nan)
 
         # колонки по которым происходит поиск совпадений
         cols = dataset.columns.tolist()
 
-        print(dataset.shape)
-        dataset = dataset.drop_duplicates(subset=cols, keep='first')
-        print(dataset.shape)
+        # print(dataset.shape)
+        # dataset = dataset.drop_duplicates(subset=cols, keep='first')
+        # print(dataset.shape)
 
         # объединяем датасеты с удалением дубликатов
         into_db = pd.concat([db_data_from, dataset], axis=0).reset_index().drop(['index', 'id'], axis=1).drop_duplicates(

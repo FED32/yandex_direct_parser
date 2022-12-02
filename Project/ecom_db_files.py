@@ -52,13 +52,29 @@ class DbEcomru:
         """
         Загружает таблицу из базы
         """
-        resp = f"SELECT * FROM {table_name}"
+        query = f"SELECT * FROM {table_name}"
         db_params = f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.db_name}"
         engine = create_engine(db_params)
         try:
             print(f'Загружается таблица {table_name}')
-            data = pd.read_sql(resp, con=engine)
+            data = pd.read_sql(query, con=engine)
             print(f'Загружена {table_name}')
+            return data
+        except:
+            print('Произошла непредвиденная ошибка')
+            return None
+
+    def get_ya_ads_data(self):
+        """
+        Загружает таблицу с данными статистики
+        """
+        query = f"""SELECT * FROM ya_ads_data WHERE report_id = 'SEARCH_QUERY_PERFORMANCE_REPORT'"""
+        db_params = f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.db_name}"
+        engine = create_engine(db_params)
+        try:
+            print('Загружается таблица ya_ads_data')
+            data = pd.read_sql(query, con=engine)
+            print(f'Загружена ya_ads_data')
             return data
         except:
             print('Произошла непредвиденная ошибка')
@@ -88,6 +104,37 @@ class DbEcomru:
             print('Загружается таблица')
             data = pd.read_sql(sql_resp, con=engine)
             print('Загружена таблица по SQL-запросу')
+            return data
+        except:
+            print('Произошла непредвиденная ошибка')
+            return None
+
+    def get_accounts(self):
+        """
+        Загружает из базы аккаунты
+        """
+        db_params = f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.db_name}"
+        engine = create_engine(db_params)
+        query = """
+                SELECT 
+                al.id, 
+                asd.attribute_value key_attribute_value, 
+                asd2.attribute_value 
+                FROM account_service_data asd 
+                JOIN account_list al ON asd.account_id = al.id
+                JOIN (SELECT al.mp_id, asd.account_id, asd.attribute_id, asd.attribute_value 
+                        FROM account_service_data asd
+                        JOIN account_list al ON asd.account_id = al.id 
+                        WHERE al.mp_id = 16) asd2 ON asd2.mp_id = al.mp_id 
+                        AND asd2.account_id= asd.account_id AND asd2.attribute_id <> asd.attribute_id
+                WHERE al.mp_id = 16 AND asd.attribute_id = 24 AND al.status_1 = 'Active' 
+                GROUP BY asd.attribute_id, asd.attribute_value, asd2.attribute_id, asd2.attribute_value, al.id 
+                ORDER BY id
+                """
+        try:
+            print('Загружается таблица')
+            data = pd.read_sql(query, con=engine)
+            print('Загружена таблица аккаунтов')
             return data
         except:
             print('Произошла непредвиденная ошибка')
@@ -154,6 +201,32 @@ class DbEcomru:
         """
         Собирает датасет
         """
+        # dtypes = {'adformat': 'object', 'adgroupid': 'object', 'adgroupname': 'object', 'adid': 'object',
+        #           'adnetworktype': 'object', 'age': 'object', 'avgclickposition': 'float64', 'avgcpc': 'float64',
+        #           'avgcpm': 'float64', 'avgeffectivebid': 'float64', 'avgimpressionfrequency': 'float64',
+        #           'avgimpressionposition': 'float64', 'avgpageviews': 'float64', 'avgtrafficvolume': 'float64',
+        #           'bouncerate': 'float64', 'bounces': 'float64',
+        #           'campaignid': 'object', 'campaignname': 'object', 'campaignurlpath': 'object',
+        #           'campaigntype': 'object', 'carriertype': 'object', 'clicks': 'float64', 'clicktype': 'object',
+        #           'clientlogin': 'object', 'conversionrate': 'float64', 'conversions': 'float64', 'cost': 'float64',
+        #           'costperconversion': 'float64', 'criteria': 'object', 'criteriaid': 'object',
+        #           'criteriatype': 'object', 'criterion': 'object', 'criterionid': 'object', 'criteriontype': 'object',
+        #           'ctr': 'float64',
+        #           'date': 'datetime', 'device': 'object',
+        #           'externalnetworkname': 'object',
+        #           'gender': 'object', 'goalsroi': 'float64',
+        #           'impressionreach': 'float64', 'impressions': 'float64', 'impressionshare': 'object',
+        #           'incomegrade': 'object',
+        #           'locationofpresenceid': 'object', 'locationofpresencename': 'object',
+        #           'matchedkeyword': 'object', 'matchtype': 'object', 'mobileplatform': 'object', 'month': 'datetime',
+        #           'placement': 'object', 'profit': 'float64',
+        #           'quarter': 'datetime', 'query': 'object',
+        #           'revenue': 'float64', 'rladjustmentid': 'object', 'report_id': 'object',
+        #           'sessions': 'float64', 'slot': 'object',
+        #           'targetingcategory': 'object', 'targetinglocationid': 'object', 'targetinglocationname': 'object',
+        #           'week': 'datetime', 'weightedctr': 'float64', 'weightedimpressions': 'float64',
+        #           'year': 'datetime'}
+
         dtypes = {'adformat': 'object', 'adgroupid': 'object', 'adgroupname': 'object', 'adid': 'object',
                   'adnetworktype': 'object', 'age': 'object', 'avgclickposition': 'float64', 'avgcpc': 'float64',
                   'avgcpm': 'float64', 'avgeffectivebid': 'float64', 'avgimpressionfrequency': 'float64',
@@ -204,9 +277,9 @@ class DbEcomru:
                             name: str,
                             login: str,
                             token: str,
-                            ya_direct_mp_id: int,
-                            ya_direct_login_attribute_id: int,
-                            ya_direct_token_attribute_id: int,
+                            ya_direct_mp_id=16,
+                            ya_direct_login_attribute_id=24,
+                            ya_direct_token_attribute_id=25,
                             status='Active'):
         """
         Добавляет в базу новые данные для доступа к yandex direct для пользователя

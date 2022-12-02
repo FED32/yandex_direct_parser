@@ -58,6 +58,7 @@ def add_new_user_data(login, token,
 
         # загружаем типы отчетов
         # reports = database.get_data_by_response(sql_resp=db_config['report_types_1']['resp'])
+        # reports = database.get_data_by_response(sql_resp='select * from ya_ads_report_types')
         # report_list = reports['id_report'].tolist()
         report_list = ['SEARCH_QUERY_PERFORMANCE_REPORT']
 
@@ -110,6 +111,9 @@ def add_new_user_data(login, token,
                                     data=f"{login}_{report_type}: ошибка соединения с сервером API либо непредвиденная ошибка")
                         print(f'Не удалось загрузить отчет {report_type}')
                         continue
+            else:
+                print('Данные уже имеются в базе')
+                add_logging(logs_folder, data='Данные уже имеются в базе')
         else:
             print('Ошибка при загрузке')
             add_logging(logs_folder, data='Ошибка при загрузке')

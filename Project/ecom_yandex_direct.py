@@ -40,7 +40,7 @@ class YandexDirectEcomru:
 
         self.counter = []  # счетчик запросов
 
-    def get_auth_link(self, type_):
+    def get_auth_link(self, type_='token'):
         """
         Генерирует ссылку на страницу авторизации клиентом приложения
         """
@@ -69,7 +69,8 @@ class YandexDirectEcomru:
             "client_id": self.client_id,
             "client_secret": self.client_secret
                 }
-        response = requests.post(url, headers=head, data=json.dumps(body))
+        response = requests.post(url, data=json.dumps(body))
+        # response = requests.post(url, headers=head, data=json.dumps(body))
         # response = requests.post(url, headers=head, data=json.dumps(body, ensure_ascii=False).encode('utf8'))
         # response = requests.post(url, headers=head)
         # response = requests.post(url, params=body)
@@ -127,15 +128,19 @@ class YandexDirectEcomru:
             print("Произошла непредвиденная ошибка.")
             return None
 
-    def get_campaigns(self, criteries={}):
+    def get_campaigns(self, criteries=None):
         """
         Возвращает параметры кампаний, отвечающих заданным критериям.
         Структура описания критериев:
         https://yandex.ru/dev/direct/doc/ref-v5/campaigns/get.html#input__CampaignsSelectionCriteria
         """
+        if criteries is None:
+            criteria = dict()
+        else:
+            criteria = criteries
         service = 'campaigns'
         body = {"method": "get",
-                "params": {"SelectionCriteria": criteries,
+                "params": {"SelectionCriteria": criteria,
                            "FieldNames": ["Id", "Name"]
                            }
                 }
@@ -1532,4 +1537,14 @@ class YandexDirectEcomru:
                 # Принудительный выход из цикла
                 return None
                 # break
+
+    @staticmethod
+    def get_user_info(token):
+        """
+        Возвращает данные пользователя
+        """
+        url = 'https://login.yandex.ru/info?format=json'
+        head = {'Authorization': f'OAuth {token}'}
+        return requests.get(url, headers=head)
+
 
