@@ -16,7 +16,7 @@ from data_logging import add_logging
 
 data_folder = './data'
 logs_folder = './logs'
-delete_files = 0
+delete_files = 1
 upl_into_db = 1
 
 print('data_folder: ', data_folder)
@@ -148,8 +148,8 @@ if connection is not None:
     report_list = ['SEARCH_QUERY_PERFORMANCE_REPORT']
 
     # задаем временной интервал
-    # date_from = str(last_date + timedelta(days=1))
-    date_from = '2022-09-01'
+    date_from = str(last_date + timedelta(days=1))
+    # date_from = '2022-09-01'
     date_to = str(date.today() - timedelta(days=1))
 
     print('date_from', date_from)
