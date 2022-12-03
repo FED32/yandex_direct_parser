@@ -57,7 +57,6 @@ def add_new_user_data(login, token,
         add_logging(logs_folder, data=str(connection))
 
         # загружаем типы отчетов
-        # reports = database.get_data_by_response(sql_resp=db_config['report_types_1']['resp'])
         # reports = database.get_data_by_response(sql_resp='select * from ya_ads_report_types')
         # report_list = reports['id_report'].tolist()
         report_list = ['SEARCH_QUERY_PERFORMANCE_REPORT']
@@ -92,9 +91,10 @@ def add_new_user_data(login, token,
                                                     )
                     if report is not None:
                         if report.status_code == 200:
-                            database.save_file(path=path_ + f'{login}',
-                                               name=f"{login}_{report_type.lower()}_{str(datetime.now().time().strftime('%H%M%S'))}.tsv",
-                                               content=report.content)
+                            database.save_file(
+                                path=path_ + f'{login}',
+                                name=f"{login}_{report_type.lower()}_{str(datetime.now().time().strftime('%H%M%S'))}.tsv",
+                                content=report.content)
                             add_logging(logs_folder, data=f"{login}_{report_type}: файл отчета сохранен")
                         elif report.status_code == 400:
                             add_logging(logs_folder,

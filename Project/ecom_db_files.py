@@ -201,32 +201,6 @@ class DbEcomru:
         """
         Собирает датасет
         """
-        # dtypes = {'adformat': 'object', 'adgroupid': 'object', 'adgroupname': 'object', 'adid': 'object',
-        #           'adnetworktype': 'object', 'age': 'object', 'avgclickposition': 'float64', 'avgcpc': 'float64',
-        #           'avgcpm': 'float64', 'avgeffectivebid': 'float64', 'avgimpressionfrequency': 'float64',
-        #           'avgimpressionposition': 'float64', 'avgpageviews': 'float64', 'avgtrafficvolume': 'float64',
-        #           'bouncerate': 'float64', 'bounces': 'float64',
-        #           'campaignid': 'object', 'campaignname': 'object', 'campaignurlpath': 'object',
-        #           'campaigntype': 'object', 'carriertype': 'object', 'clicks': 'float64', 'clicktype': 'object',
-        #           'clientlogin': 'object', 'conversionrate': 'float64', 'conversions': 'float64', 'cost': 'float64',
-        #           'costperconversion': 'float64', 'criteria': 'object', 'criteriaid': 'object',
-        #           'criteriatype': 'object', 'criterion': 'object', 'criterionid': 'object', 'criteriontype': 'object',
-        #           'ctr': 'float64',
-        #           'date': 'datetime', 'device': 'object',
-        #           'externalnetworkname': 'object',
-        #           'gender': 'object', 'goalsroi': 'float64',
-        #           'impressionreach': 'float64', 'impressions': 'float64', 'impressionshare': 'object',
-        #           'incomegrade': 'object',
-        #           'locationofpresenceid': 'object', 'locationofpresencename': 'object',
-        #           'matchedkeyword': 'object', 'matchtype': 'object', 'mobileplatform': 'object', 'month': 'datetime',
-        #           'placement': 'object', 'profit': 'float64',
-        #           'quarter': 'datetime', 'query': 'object',
-        #           'revenue': 'float64', 'rladjustmentid': 'object', 'report_id': 'object',
-        #           'sessions': 'float64', 'slot': 'object',
-        #           'targetingcategory': 'object', 'targetinglocationid': 'object', 'targetinglocationname': 'object',
-        #           'week': 'datetime', 'weightedctr': 'float64', 'weightedimpressions': 'float64',
-        #           'year': 'datetime'}
-
         dtypes = {'adformat': 'object', 'adgroupid': 'object', 'adgroupname': 'object', 'adid': 'object',
                   'adnetworktype': 'object', 'age': 'object', 'avgclickposition': 'float64', 'avgcpc': 'float64',
                   'avgcpm': 'float64', 'avgeffectivebid': 'float64', 'avgimpressionfrequency': 'float64',
