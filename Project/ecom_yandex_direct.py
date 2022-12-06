@@ -138,10 +138,15 @@ class YandexDirectEcomru:
             criteria = dict()
         else:
             criteria = criteries
+        field_names = ["Id", "Name", "BlockedIps", "ExcludedSites", "Currency", "DailyBudget", "Notification",
+                       "EndDate", "Funds", "ClientInfo", "NegativeKeywords", "RepresentedBy", "StartDate",
+                       "Statistics", "State", "Status", "StatusPayment", "StatusClarification", "SourceId",
+                       "TimeTargeting", "TimeZone", "Type"]
         service = 'campaigns'
         body = {"method": "get",
                 "params": {"SelectionCriteria": criteria,
-                           "FieldNames": ["Id", "Name"]
+                           "FieldNames": field_names
+                           # "FieldNames": ["Id", "Name"]
                            }
                 }
         return self.exec_post_api5(service, self.head, body)
@@ -1190,7 +1195,7 @@ class YandexDirectEcomru:
         return encoded_string
 
     def get_images(self,
-                   field_names=None,
+                   # field_names=None,
                    ad_image_hashes=None,
                    associated=None,
                    limit=None,
@@ -1198,6 +1203,7 @@ class YandexDirectEcomru:
         """
         Возвращает изображения, отвечающие заданным критериям
         """
+        field_names = ["AdImageHash", "OriginalUrl", "PreviewUrl", "Name", "Type", "Subtype", "Associated"]
         service = 'adimages'
         body = {"method": "get",
                 "params": {"FieldNames": field_names}

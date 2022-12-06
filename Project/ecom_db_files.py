@@ -68,7 +68,8 @@ class DbEcomru:
         """
         Загружает таблицу с данными статистики
         """
-        query = f"""SELECT * FROM ya_ads_data WHERE report_id = 'SEARCH_QUERY_PERFORMANCE_REPORT'"""
+        # query = f"""SELECT * FROM ya_ads_data WHERE report_id = 'SEARCH_QUERY_PERFORMANCE_REPORT'"""
+        query = f"""SELECT * FROM ya_ads_data WHERE report_id = 'CUSTOM_REPORT'"""
         db_params = f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.db_name}"
         engine = create_engine(db_params)
         try:

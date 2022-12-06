@@ -145,12 +145,14 @@ if connection is not None:
     # reports = database.get_data_by_response(sql_resp=db_config['report_types_1']['resp'])
     # report_list = reports['id_report'].tolist()
     # report_list = ['AD_PERFORMANCE_REPORT']
-    report_list = ['SEARCH_QUERY_PERFORMANCE_REPORT']
+    # report_list = ['SEARCH_QUERY_PERFORMANCE_REPORT']
+    report_list = ['CUSTOM_REPORT']
 
     # задаем временной интервал
     date_from = str(last_date + timedelta(days=1))
     # date_from = '2022-09-01'
     date_to = str(date.today() - timedelta(days=1))
+    # date_to = '2022-12-06'
 
     print('date_from', date_from)
     print('date_to', date_to)
@@ -193,10 +195,20 @@ if len(files) > 0:
         db_data_from = db_data_from.fillna(np.nan)
 
         # колонки по которым происходит поиск совпадений
-        cols = dataset.columns.tolist()
+        # cols = dataset.columns.tolist()
+        cols = ['report_id', 'adformat', 'adgroupid', 'adgroupname', 'adid',
+       'adnetworktype', 'age', 'avgtrafficvolume', 'bounces', 'campaignid',
+       'campaignname', 'campaignurlpath', 'campaigntype', 'carriertype',
+       'clicks', 'clientlogin', 'cost', 'criterion', 'criterionid',
+       'criteriontype', 'ctr', 'date', 'device', 'externalnetworkname',
+       'gender', 'impressions', 'incomegrade', 'locationofpresenceid',
+       'locationofpresencename', 'matchtype', 'mobileplatform', 'profit',
+       'revenue', 'rladjustmentid', 'sessions', 'slot', 'targetingcategory',
+       'targetinglocationid', 'targetinglocationname', 'weightedctr',
+       'weightedimpressions']
 
         # print(dataset.shape)
-        # dataset = dataset.drop_duplicates(subset=cols, keep='first')
+        dataset = dataset.drop_duplicates(subset=cols, keep='first')
         # print(dataset.shape)
 
         # объединяем датасеты с удалением дубликатов
