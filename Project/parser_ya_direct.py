@@ -142,17 +142,17 @@ if connection is not None:
     add_logging(logs_folder, data='Количество записей в таблице аккаунтов ' + str(api_keys.shape[0]))
 
     # загружаем типы отчетов
-    # reports = database.get_data_by_response(sql_resp=db_config['report_types_1']['resp'])
-    # report_list = reports['id_report'].tolist()
+    reports = database.get_data_by_response(sql_resp='select * from ya_ads_report_types')
+    report_list = reports['id_report'].tolist()
     # report_list = ['AD_PERFORMANCE_REPORT']
     # report_list = ['SEARCH_QUERY_PERFORMANCE_REPORT']
-    report_list = ['CUSTOM_REPORT']
+    # report_list = ['CUSTOM_REPORT']
 
     # задаем временной интервал
     date_from = str(last_date + timedelta(days=1))
     # date_from = '2022-09-01'
     date_to = str(date.today() - timedelta(days=1))
-    # date_to = '2022-12-06'
+    # date_to = '2022-12-07'
 
     print('date_from', date_from)
     print('date_to', date_to)
