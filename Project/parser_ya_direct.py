@@ -18,6 +18,7 @@ data_folder = './data'
 logs_folder = './logs'
 delete_files = 1
 upl_into_db = 1
+delete_duplicates = 0
 
 print('data_folder: ', data_folder)
 print('logs_folder: ', logs_folder)
@@ -118,19 +119,28 @@ def thread_func(*args):
 if connection is not None:
     add_logging(logs_folder, data=str(connection))
 
-    # загружаем таблицу с данными
-    db_data = database.get_ya_ads_data()
-    # db_data = database.get_table(table_name='ya_ads_data')
-    print('Количество записей в таблице статистики ' + str(db_data.shape[0]))
-    add_logging(logs_folder, data='Количество записей в таблице статистики ' + str(db_data.shape[0]))
+    # # загружаем таблицу с данными
+    # db_data = database.get_ya_ads_data()
+    # # db_data = database.get_table(table_name='ya_ads_data')
+    # print('Количество записей в таблице статистики ' + str(db_data.shape[0]))
+    # add_logging(logs_folder, data='Количество записей в таблице статистики ' + str(db_data.shape[0]))
+    #
+    # # извлекаем последнюю дату
+    # if db_data.shape[0] > 0:
+    #     last_date = db_data['date'].sort_values(ascending=False).values[0]
+    #     add_logging(logs_folder, data='Дата последней записи в таблице статистики ' + str(last_date))
+    #     print('Дата последней записи в таблице статистики ', last_date)
+    # else:
+    #     last_date = date.today() - timedelta(days=3)
 
     # извлекаем последнюю дату
-    if db_data.shape[0] > 0:
-        last_date = db_data['date'].sort_values(ascending=False).values[0]
-        add_logging(logs_folder, data='Дата последней записи в таблице статистики ' + str(last_date))
-        print('Дата последней записи в таблице статистики ', last_date)
+    l_date = database.get_last_date()
+    if l_date is not None:
+        last_date = l_date
+        add_logging(logs_folder, data=f'Дата последней записи в таблице статистики {str(last_date)}')
+        print(f'Дата последней записи в таблице статистики {str(last_date)}')
     else:
-        last_date = date.today() - timedelta(days=3)
+        last_date = date.today() - timedelta(days=120)
 
     # загружаем таблицу с аккаунтами
     api_keys = database.get_accounts().drop_duplicates(subset=['key_attribute_value', 'attribute_value'], keep='last')
@@ -150,12 +160,14 @@ if connection is not None:
 
     # задаем временной интервал
     date_from = str(last_date + timedelta(days=1))
-    # date_from = '2022-09-01'
+    # date_from = '2022-12-01'
     date_to = str(date.today() - timedelta(days=1))
-    # date_to = '2022-12-07'
+    # date_to = '2022-12-11'
 
     print('date_from', date_from)
     print('date_to', date_to)
+    add_logging(logs_folder, data=f'date_from: {date_from}')
+    add_logging(logs_folder, data=f'date_to: {date_to}')
 
     # создаем отдельные потоки по каждому аккаунту
     threads = []
@@ -182,61 +194,53 @@ else:
 # проверяем наличие загруженных файлов
 files = []
 for folder in os.listdir(path_):
-    files += (glob.glob(os.path.join(path_ + '/' + folder, "*.tsv")))
+    files += (glob.glob(os.path.join(path_ + folder, "*.tsv")))
 
 if len(files) > 0:
     # создаем датасет на основе загруженных по API данных
     dataset = database.make_dataset(path=path_)
-    add_logging(logs_folder, data='Количество сырых строк ' + str(dataset.shape[0]))
+    add_logging(logs_folder, data=f'Количество строк {dataset.shape[0]}')
+    print('dataset', dataset.shape)
 
-    if db_data.shape[0] > 0:
-        # фильтрация дубликатов
-        db_data_from = db_data[db_data['date'] >= datetime.strptime(date_from, '%Y-%m-%d').date()]
-        db_data_from = db_data_from.fillna(np.nan)
-
-        # колонки по которым происходит поиск совпадений
-        # cols = dataset.columns.tolist()
-        cols = ['report_id', 'adformat', 'adgroupid', 'adgroupname', 'adid',
-       'adnetworktype', 'age', 'avgtrafficvolume', 'bounces', 'campaignid',
-       'campaignname', 'campaignurlpath', 'campaigntype', 'carriertype',
-       'clicks', 'clientlogin', 'cost', 'criterion', 'criterionid',
-       'criteriontype', 'ctr', 'date', 'device', 'externalnetworkname',
-       'gender', 'impressions', 'incomegrade', 'locationofpresenceid',
-       'locationofpresencename', 'matchtype', 'mobileplatform', 'profit',
-       'revenue', 'rladjustmentid', 'sessions', 'slot', 'targetingcategory',
-       'targetinglocationid', 'targetinglocationname', 'weightedctr',
-       'weightedimpressions']
-
-        # print(dataset.shape)
+    if dataset.shape[0] > 0:
+        #  cols = ['report_id', 'adformat', 'adgroupid', 'adgroupname', 'adid',
+        # 'adnetworktype', 'age', 'avgtrafficvolume', 'bounces', 'campaignid',
+        # 'campaignname', 'campaignurlpath', 'campaigntype', 'carriertype',
+        # 'clicks', 'clientlogin', 'cost', 'criterion', 'criterionid',
+        # 'criteriontype', 'ctr', 'date', 'device', 'externalnetworkname',
+        # 'gender', 'impressions', 'incomegrade', 'locationofpresenceid',
+        # 'locationofpresencename', 'matchtype', 'mobileplatform', 'profit',
+        # 'revenue', 'rladjustmentid', 'sessions', 'slot', 'targetingcategory',
+        # 'targetinglocationid', 'targetinglocationname', 'weightedctr',
+        # 'weightedimpressions']
+        cols = dataset.columns.tolist()
         dataset = dataset.drop_duplicates(subset=cols, keep='first')
-        # print(dataset.shape)
-
-        # объединяем датасеты с удалением дубликатов
-        into_db = pd.concat([db_data_from, dataset], axis=0).reset_index().drop(['index', 'id'], axis=1).drop_duplicates(
-            subset=cols,
-            keep=False)
         print('dataset', dataset.shape)
-        print('db_data_from', db_data_from.shape)
-        print('into_db', into_db.shape)
-    else:
+
         into_db = dataset
-        print('into_db', into_db.shape)
 
-    into_db.to_csv(path_ + 'into_db.csv', sep=';', index=False)
-    add_logging(logs_folder, data='Готово строк для записи в БД: ' + str(into_db.shape[0]))
-    print(into_db)
+        print(into_db.head())
 
-    if upl_into_db == 1:
-        upload = database.upl_to_db(dataset=into_db, table_name='ya_ads_data')
-        if upload is not None:
-            add_logging(logs_folder, data='Запись в БД выполнена')
+        into_db.to_csv(path_ + 'into_db.csv', sep=';', index=False)
+        add_logging(logs_folder, data=f'Готово строк для записи в БД: {into_db.shape[0]}')
+
+        if upl_into_db == 1:
+            upload = database.upl_to_db(dataset=into_db, table_name='ya_ads_data')
+            if upload is not None:
+                add_logging(logs_folder, data='Запись в БД выполнена')
+            else:
+                add_logging(logs_folder, data='Запись в БД не удалась')
         else:
-            add_logging(logs_folder, data='Запись в БД не удалась')
+            add_logging(logs_folder, data='Запись в БД отключена')
+
     else:
-        add_logging(logs_folder, data='Запись в БД отключена')
+        print('Нет статистики за указанный период, отчеты не содержат данных')
+        add_logging(logs_folder, data='Нет статистики за указанный период, отчеты не содержат данных')
+
 else:
     print('Нет загруженных файлов для обработки')
     add_logging(logs_folder, data='Нет загруженных файлов для обработки')
+
 
 if delete_files == 1:
     # удаляем файлы (папку)
@@ -247,4 +251,25 @@ if delete_files == 1:
         print("Error: %s - %s." % (e.filename, e.strerror))
         add_logging(logs_folder, data='Ошибка при удалении файлов')
 else:
+    print('Удаление файлов отменено')
     add_logging(logs_folder, data='Удаление файлов отменено')
+
+if delete_duplicates == 1:
+    dupl = database.find_duplicates()
+    print(f"Найдено дубликатов: {len(dupl)}")
+    add_logging(logs_folder, data=f"Найдено дубликатов: {len(dupl)}")
+    if len(dupl) > 0:
+        res = database.delete_duplicates(id_list=dupl)
+        if res is not None:
+            print('Дубликаты удалены')
+            add_logging(logs_folder, data='Дубликаты удалены')
+        else:
+            print('Ошибка при удалении дубликатов')
+            add_logging(logs_folder, data='Ошибка при удалении дубликатов')
+    else:
+        print('Дубликатов нет')
+        add_logging(logs_folder, data='Дубликатов нет')
+
+
+
+
