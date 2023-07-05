@@ -68,7 +68,9 @@ class DbEcomru:
         """
         Загружает таблицу с данными статистики
         """
-        query = f"""SELECT * FROM ya_ads_data WHERE report_id = 'SEARCH_QUERY_PERFORMANCE_REPORT'"""
+        # query = """SELECT * FROM ya_ads_data WHERE report_id = 'SEARCH_QUERY_PERFORMANCE_REPORT'"""
+        # query = """SELECT * FROM ya_ads_data WHERE report_id = 'CUSTOM_REPORT'"""
+        query = """SELECT * FROM ya_ads_data"""
         db_params = f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.db_name}"
         engine = create_engine(db_params)
         try:
@@ -106,7 +108,7 @@ class DbEcomru:
             print('Загружена таблица по SQL-запросу')
             return data
         except:
-            print('Произошла непредвиденная ошибка')
+            print('Произошла непредвиденная ошибка, ошибка в запросе или ошибка доступа')
             return None
 
     def get_accounts(self):
@@ -154,7 +156,7 @@ class DbEcomru:
         print('Сохранен', dir_)
 
     @staticmethod
-    def read_trans_tsv(file):
+    def read_trans_tsv(file, login):
         """
         Обрабатывает загруженные данные
         """
@@ -195,6 +197,9 @@ class DbEcomru:
         report_id = (name.split('-')[0]).upper()
         data.rename(columns=columns, inplace=True)
         data['report_id'] = report_id
+
+        data['login'] = login
+
         return data
 
     def make_dataset(self, path):
@@ -225,15 +230,17 @@ class DbEcomru:
                   'sessions': 'float64', 'slot': 'object',
                   'targetingcategory': 'object', 'targetinglocationid': 'object', 'targetinglocationname': 'object',
                   'week': 'datetime', 'weightedctr': 'float64', 'weightedimpressions': 'float64',
-                  'year': 'datetime'}
+                  'year': 'datetime',
+                  'login': 'object'}
 
         rep_data = []
         for folder in os.listdir(path):
             files = (glob.glob(os.path.join(path + '/' + folder, "*.tsv")))
             for file in files:
-                # report_id = os.path.basename(file).split('_')[-2]
-                rep_data.append(self.read_trans_tsv(file))
+                rep_data.append(self.read_trans_tsv(file, login=folder))
+
         dataset = pd.concat(rep_data, axis=0).reset_index().drop('index', axis=1)
+
         for col in dataset.columns:
             # print(col, dtypes[col])
             if dtypes[col] == 'datetime':
@@ -243,6 +250,7 @@ class DbEcomru:
                 dataset[col] = dataset[col].replace('--', np.nan)
                 dataset[col] = dataset[col].astype('float64')
             else:
+                dataset[col] = dataset[col].replace('--', np.nan)
                 dataset[col] = dataset[col].astype(dtypes[col])
         return dataset
 
@@ -307,3 +315,62 @@ class DbEcomru:
                 except:
                     print('Нет подключения к БД, или нет доступа на выполнение операции')
                     return None
+
+    def get_last_date(self):
+        """
+        Возвращает последнюю дату в таблице статистики
+        """
+        db_params = f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.db_name}"
+        engine = create_engine(db_params)
+        query = "SELECT max(date) FROM ya_ads_data"
+        try:
+            data = pd.read_sql(query, con=engine)
+            return data.values[0][0]
+        except:
+            print('Произошла непредвиденная ошибка')
+            return None
+
+    def find_duplicates(self):
+        """
+        Возвращает индексы дубликатов строк
+        """
+        query = "SELECT * FROM ya_ads_data ORDER BY date desc"
+        data = self.get_data_by_response(query)
+
+        if data is not None:
+
+            cols = list(data.drop('id', axis=1).columns)
+
+            dupl = pd.DataFrame(data.id).join(pd.DataFrame(data.duplicated(subset=cols, keep='last')))
+            dupl.columns = ['id', 'duplicate']
+
+            return dupl[dupl.duplicate == True].id.values.tolist()
+
+        else:
+            return None
+
+    def delete_duplicates(self, id_list: list):
+        """
+        Удаляет строки в соответствии со списком индексов
+        """
+        query = f"DELETE FROM ya_ads_data WHERE id IN {tuple(id_list)}"
+
+        try:
+            conn = psycopg2.connect(self.db_access)
+            q = conn.cursor()
+            q.execute(query)
+            conn.commit()
+            status = q.statusmessage
+            q.close()
+            conn.close()
+            print(status)
+            return status
+        except:
+            print('Нет подключения к БД, или нет доступа на выполнение операции')
+            return None
+
+
+
+
+
+

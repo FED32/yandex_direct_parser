@@ -1,0 +1,8 @@
+2022-12-22 22:39:50,697 - logger - ERROR - sapetushkov1@yandex.ru_ACCOUNT_PERFORMANCE_REPORT: Request parameters are indicated incorrectly or reached report limit - (parser_ya_direct.py:107)
+2022-12-22 22:39:50,765 - logger - ERROR - sapetushkov1@yandex.ru_CAMPAIGN_PERFORMANCE_REPORT: Request parameters are indicated incorrectly or reached report limit - (parser_ya_direct.py:107)
+2022-12-22 22:39:50,856 - logger - ERROR - sapetushkov1@yandex.ru_ADGROUP_PERFORMANCE_REPORT: Request parameters are indicated incorrectly or reached report limit - (parser_ya_direct.py:107)
+2022-12-22 22:39:50,905 - logger - ERROR - sapetushkov1@yandex.ru_AD_PERFORMANCE_REPORT: Request parameters are indicated incorrectly or reached report limit - (parser_ya_direct.py:107)
+2022-12-22 22:39:50,985 - logger - ERROR - sapetushkov1@yandex.ru_CRITERIA_PERFORMANCE_REPORT: Request parameters are indicated incorrectly or reached report limit - (parser_ya_direct.py:107)
+2022-12-22 22:39:51,053 - logger - ERROR - sapetushkov1@yandex.ru_CUSTOM_REPORT: Request parameters are indicated incorrectly or reached report limit - (parser_ya_direct.py:107)
+2022-12-22 22:39:51,103 - logger - ERROR - sapetushkov1@yandex.ru_REACH_AND_FREQUENCY_PERFORMANCE_REPORT: Request parameters are indicated incorrectly or reached report limit - (parser_ya_direct.py:107)
+2022-12-22 22:39:51,162 - logger - ERROR - sapetushkov1@yandex.ru_SEARCH_QUERY_PERFORMANCE_REPORT: Request parameters are indicated incorrectly or reached report limit - (parser_ya_direct.py:107)

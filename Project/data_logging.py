@@ -10,3 +10,4 @@ def add_logging(logs_folder, data: str):
     with open(f'{logs_folder}/{log_file_name}.txt', 'a') as f:
         f.write(str(datetime.now()) + ': ')
         f.write(str(data + '\n'))
+
