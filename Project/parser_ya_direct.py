@@ -16,8 +16,8 @@ from data_logging import add_logging
 
 data_folder = './data'
 logs_folder = './logs'
-delete_files = 1
-upl_into_db = 1
+delete_files = 0
+upl_into_db = 0
 delete_duplicates = 0
 
 logger = logger.init_logger()
